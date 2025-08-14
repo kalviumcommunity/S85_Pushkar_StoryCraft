@@ -18,15 +18,42 @@ app.post("/story", async (req, res) => {
   let prompt = "";
 
   if (mode === "one-shot") {
-    // One-shot prompting: include an example story
-    prompt = `
-You are Story Buddy, a creative short story generator.
-
+    // One-shot prompting: include one example story
+    const exampleStory = `
 Example:
 Character: Alice
 Keywords: magic, rabbit, clock
 Style: whimsical
 Story: Alice followed the white rabbit through the enchanted forest, discovering a magical clock that ticked backward, revealing hidden wonders.
+    `;
+    prompt = `
+You are Story Buddy, a creative short story generator.
+${exampleStory}
+
+Now write a story using:
+- Character: ${character}
+- Keywords: ${keywords.join(", ")}
+- Style: ${style}
+Story should be engaging, use all keywords, and be under 150 words.
+`;
+  } else if (mode === "multi-shot") {
+    // Multi-shot prompting: include multiple example stories
+    const examples = `
+Example 1:
+Character: Luna the mage
+Keywords: castle, magic, friendship
+Style: whimsical
+Story: Luna the mage wandered through the enchanted castle, her wand glowing as she discovered new friends in every corner. Magic swirled around them, and laughter echoed through the halls.
+
+Example 2:
+Character: Arlo the knight
+Keywords: dragon, forest, bravery
+Style: adventurous
+Story: Arlo ventured into the dark forest, sword in hand, ready to face the dragon. His courage never wavered, and he formed a bond with the dragon along the way.
+    `;
+    prompt = `
+You are Story Buddy, a creative short story generator.
+${examples}
 
 Now write a story using:
 - Character: ${character}
