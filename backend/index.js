@@ -7,18 +7,18 @@ app.use(bodyParser.json());
 
 // POST endpoint to generate a story
 app.post("/story", async (req, res) => {
-  const { character, keywords, style, mode } = req.body;
+  const { character, keywords, style, mode, length, tone, previousStory } = req.body;
 
   // Validate input
   if (!character || !keywords || !Array.isArray(keywords) || !style) {
     return res.status(400).json({ error: "Missing or invalid input fields" });
   }
 
-  // Construct the prompt based on mode
+  // Start constructing the base prompt
   let prompt = "";
 
+  // Include one-shot or multi-shot examples if needed
   if (mode === "one-shot") {
-    // One-shot prompting: include one example story
     const exampleStory = `
 Example:
 Character: Alice
@@ -26,18 +26,8 @@ Keywords: magic, rabbit, clock
 Style: whimsical
 Story: Alice followed the white rabbit through the enchanted forest, discovering a magical clock that ticked backward, revealing hidden wonders.
     `;
-    prompt = `
-You are Story Buddy, a creative short story generator.
-${exampleStory}
-
-Now write a story using:
-- Character: ${character}
-- Keywords: ${keywords.join(", ")}
-- Style: ${style}
-Story should be engaging, use all keywords, and be under 150 words.
-`;
+    prompt += `You are Story Buddy, a creative short story generator.\n${exampleStory}\n`;
   } else if (mode === "multi-shot") {
-    // Multi-shot prompting: include multiple example stories
     const examples = `
 Example 1:
 Character: Luna the mage
@@ -51,27 +41,28 @@ Keywords: dragon, forest, bravery
 Style: adventurous
 Story: Arlo ventured into the dark forest, sword in hand, ready to face the dragon. His courage never wavered, and he formed a bond with the dragon along the way.
     `;
-    prompt = `
-You are Story Buddy, a creative short story generator.
-${examples}
-
-Now write a story using:
-- Character: ${character}
-- Keywords: ${keywords.join(", ")}
-- Style: ${style}
-Story should be engaging, use all keywords, and be under 150 words.
-`;
+    prompt += `You are Story Buddy, a creative short story generator.\n${examples}\n`;
   } else {
-    // Default zero-shot prompting
-    prompt = `
-You are Story Buddy, a creative short story generator.
-Write a short story using:
-- Character: ${character}
-- Keywords: ${keywords.join(", ")}
-- Style: ${style}
-Story should be engaging, use all keywords, and be under 150 words.
-`;
+    // Zero-shot: just instructions
+    prompt += `You are Story Buddy, a creative short story generator.\n`;
   }
+
+  // Add dynamic user inputs
+  prompt += `Now write a story using:\n- Character: ${character}\n- Keywords: ${keywords.join(", ")}\n- Style: ${style}\n`;
+
+  if (length) {
+    prompt += `- Length: ${length}\n`;
+  }
+
+  if (tone) {
+    prompt += `- Tone: ${tone}\n`;
+  }
+
+  if (previousStory) {
+    prompt += `- Continue this story: ${previousStory}\n`;
+  }
+
+  prompt += `Story should be engaging, use all keywords, and be under 150 words.`;
 
   try {
     const response = await fetch("http://localhost:11434/api/generate", {
