@@ -14,10 +14,10 @@ app.post("/story", async (req, res) => {
     return res.status(400).json({ error: "Missing or invalid input fields" });
   }
 
-  // Start constructing the base prompt
-  let prompt = "";
+  // Construct the base prompt
+  let prompt = "You are Story Buddy, a creative short story generator.\n\n";
 
-  // Include one-shot or multi-shot examples if needed
+  // Include examples for one-shot or multi-shot
   if (mode === "one-shot") {
     const exampleStory = `
 Example:
@@ -26,7 +26,7 @@ Keywords: magic, rabbit, clock
 Style: whimsical
 Story: Alice followed the white rabbit through the enchanted forest, discovering a magical clock that ticked backward, revealing hidden wonders.
     `;
-    prompt += `You are Story Buddy, a creative short story generator.\n${exampleStory}\n`;
+    prompt += exampleStory + "\n";
   } else if (mode === "multi-shot") {
     const examples = `
 Example 1:
@@ -41,28 +41,17 @@ Keywords: dragon, forest, bravery
 Style: adventurous
 Story: Arlo ventured into the dark forest, sword in hand, ready to face the dragon. His courage never wavered, and he formed a bond with the dragon along the way.
     `;
-    prompt += `You are Story Buddy, a creative short story generator.\n${examples}\n`;
-  } else {
-    // Zero-shot: just instructions
-    prompt += `You are Story Buddy, a creative short story generator.\n`;
+    prompt += examples + "\n";
   }
 
   // Add dynamic user inputs
   prompt += `Now write a story using:\n- Character: ${character}\n- Keywords: ${keywords.join(", ")}\n- Style: ${style}\n`;
+  if (length) prompt += `- Length: ${length}\n`;
+  if (tone) prompt += `- Tone: ${tone}\n`;
+  if (previousStory) prompt += `- Continue this story: ${previousStory}\n`;
 
-  if (length) {
-    prompt += `- Length: ${length}\n`;
-  }
-
-  if (tone) {
-    prompt += `- Tone: ${tone}\n`;
-  }
-
-  if (previousStory) {
-    prompt += `- Continue this story: ${previousStory}\n`;
-  }
-
-  prompt += `Story should be engaging, use all keywords, and be under 150 words.`;
+  // Instruct model to return structured JSON
+  prompt += `Return the output in JSON format with keys: story, keywordsUsed, length, style, tone.\n`;
 
   try {
     const response = await fetch("http://localhost:11434/api/generate", {
@@ -78,7 +67,22 @@ Story: Arlo ventured into the dark forest, sword in hand, ready to face the drag
 
     const data = await response.json();
 
-    res.json({ story: data.response });
+    // Parse JSON output safely
+    let structuredOutput;
+    try {
+      structuredOutput = JSON.parse(data.response);
+    } catch {
+      // Fallback if model returns plain text
+      structuredOutput = {
+        story: data.response,
+        keywordsUsed: keywords,
+        length: data.response.length,
+        style: style,
+        tone: tone || "neutral"
+      };
+    }
+
+    res.json(structuredOutput);
   } catch (error) {
     console.error("Error generating story:", error.message);
     res.status(500).json({ error: "Failed to generate story" });
