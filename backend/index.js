@@ -1,10 +1,14 @@
 import express from "express";
 import bodyParser from "body-parser";
 import fetch from "node-fetch";
+import cors from "cors";
 
 const app = express();
 app.use(bodyParser.json());
-
+app.use(cors({
+  origin: "http://localhost:5173", // if Vite
+  methods: ["POST", "GET"]
+}));
 // POST endpoint to generate a story
 app.post("/story", async (req, res) => {
   const { character, keywords, style, mode, length, tone, previousStory } = req.body;
@@ -95,7 +99,7 @@ Story: Arlo ventured into the dark forest, sword in hand, ready to face the drag
 });
 
 // Start the server
-const PORT = 3000;
+const PORT = 5000;
 app.listen(PORT, () => {
   console.log(`Story Buddy running on http://localhost:${PORT}`);
 });
