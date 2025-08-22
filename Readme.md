@@ -1,7 +1,7 @@
 # Story Buddy Bot 📝
 
 A simple AI-powered storytelling bot built with **Node.js**, **Express**, and **Ollama** using the **Llama 3** model.  
-The bot uses **zero-shot prompting** to generate creative short stories based on your input.
+You can use StoryCraft to generate imaginative stories, with support for **stop sequences**, ensuring cleaner outputs.
 
 ---
 
